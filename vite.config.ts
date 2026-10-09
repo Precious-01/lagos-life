@@ -8,8 +8,6 @@ export default defineConfig({
     dedupe: ['react', 'react-dom', 'three'],
   },
   optimizeDeps: {
-    // Pre-bundle the 3D stack up front so Vite does not re-optimise it mid-load,
-    // which is what caused the "504 Outdated Optimize Dep" error in development.
     include: [
       'react',
       'react-dom',
@@ -18,7 +16,6 @@ export default defineConfig({
       'react/jsx-dev-runtime',
       'three',
       '@react-three/fiber',
-      '@react-three/drei',
       'zustand',
     ],
   },
