@@ -1,16 +1,17 @@
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef, useState } from 'react';
 import type { Group } from 'three';
+import { DEFAULT_FOLLOW_CAMERA, damp, orbitCameraGoal, updateCameraYaw } from '../game/camera';
+import type { CameraGoal, Vec3 } from '../game/camera';
 import {
-  DEFAULT_FOLLOW_CAMERA,
-  damp,
-  followCameraGoal,
-  orbitCameraGoal,
-  updateCameraYaw,
-  type CameraGoal,
-  type Vec3,
-} from '../game/camera';
+  DEFAULT_ORBIT_VIEW,
+  applyLookDelta,
+  applyZoom,
+  orbitFollowGoal,
+  type OrbitView,
+} from '../game/cameraControl';
 import { constrainCameraGoal } from '../game/cameraCollision';
+import { buildingsToColliders } from '../game/collider';
 import {
   DEFAULT_PLAYER_CONFIG,
   createPlayer,
@@ -22,6 +23,7 @@ import {
 import type { District } from '../game/types';
 import { useGameStore } from '../state/gameStore';
 import { PlayerAvatar } from './PlayerAvatar';
+import { usePointerCamera } from './usePointerCamera';
 import { useKeyboardInput } from './useKeyboardInput';
 
 interface PlayerRigProps {
@@ -31,8 +33,8 @@ interface PlayerRigProps {
 /** Everything that changes every frame lives here, in a plain object, not in React state. */
 interface Simulation {
   player: PlayerState;
-  /** Direction the camera looks, in radians. See game/angles.ts for the convention. */
-  yaw: number;
+  /** The player's chosen camera angle and distance. See game/cameraControl.ts. */
+  view: OrbitView;
   introAngle: number;
   walkPhase: number;
   /** The smoothed point the camera is looking at. */
@@ -55,22 +57,27 @@ const WALK_BOB_HEIGHT = 0.06;
 const AVATAR_HIDE_DISTANCE = 1.2;
 
 /**
- * Owns the player and the camera. Replaces the Phase 1 orbit rig:
- * title screen = slow automatic orbit, explore = third-person follow camera with collision.
+ * Owns the player and the camera, and is the ONLY thing that moves the camera.
+ * Title screen = slow automatic orbit. Explore = third-person follow camera with mouse look,
+ * zoom and collision.
  */
 export function PlayerRig({ district }: PlayerRigProps) {
   const phase = useGameStore((state) => state.phase);
-  const input = useKeyboardInput(phase === 'explore');
+  const exploringPhase = phase === 'explore';
+  const keys = useKeyboardInput(exploringPhase);
+  const pointer = usePointerCamera(exploringPhase);
   const avatarRef = useRef<Group>(null);
 
+  // One collider list serves both the player and the camera.
+  const colliders = useMemo(() => buildingsToColliders(district.buildings), [district]);
   const movement = useMemo<MovementContext>(
-    () => ({ obstacles: district.buildings, bounds: district.bounds }),
-    [district],
+    () => ({ obstacles: colliders, bounds: district.bounds }),
+    [colliders, district],
   );
 
   const [simulation] = useState<Simulation>(() => ({
     player: createPlayer(findSpawnPoint(movement, DEFAULT_PLAYER_CONFIG.radius)),
-    yaw: 0,
+    view: DEFAULT_ORBIT_VIEW,
     introAngle: INTRO_START_ANGLE,
     walkPhase: 0,
     look: { x: 0, y: 0, z: 0 },
@@ -83,9 +90,18 @@ export function PlayerRig({ district }: PlayerRigProps) {
     let goal: CameraGoal;
     let lambda: number;
     if (exploring) {
-      simulation.yaw = updateCameraYaw(simulation.yaw, input, dt, DEFAULT_FOLLOW_CAMERA.rotateRate);
-      simulation.player = stepPlayer(simulation.player, input, simulation.yaw, dt, movement);
-      goal = followCameraGoal(simulation.player, simulation.yaw);
+      // Read and clear the mouse movement collected since the last frame.
+      let view = applyLookDelta(simulation.view, pointer.lookX, pointer.lookY);
+      view = applyZoom(view, pointer.wheel);
+      pointer.lookX = 0;
+      pointer.lookY = 0;
+      pointer.wheel = 0;
+      // Q and E also turn the camera.
+      view = { ...view, yaw: updateCameraYaw(view.yaw, keys, dt, DEFAULT_FOLLOW_CAMERA.rotateRate) };
+      simulation.view = view;
+
+      simulation.player = stepPlayer(simulation.player, keys, view.yaw, dt, movement);
+      goal = orbitFollowGoal(simulation.player, view, DEFAULT_FOLLOW_CAMERA.lookHeight);
       lambda = FOLLOW_LAMBDA;
     } else {
       simulation.introAngle += dt * INTRO_SPEED;
@@ -106,8 +122,7 @@ export function PlayerRig({ district }: PlayerRigProps) {
 
     // Collision runs AFTER smoothing, so the camera can never glide through a wall while easing.
     const finalPosition = exploring
-      ? constrainCameraGoal({ position: smoothed, target: goal.target }, district.buildings)
-          .position
+      ? constrainCameraGoal({ position: smoothed, target: goal.target }, colliders).position
       : smoothed;
 
     camera.position.set(finalPosition.x, finalPosition.y, finalPosition.z);
