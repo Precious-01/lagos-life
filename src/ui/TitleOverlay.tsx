@@ -6,14 +6,14 @@ export function TitleOverlay() {
   return (
     <div className="overlay overlay--center">
       <section className="card" aria-labelledby="title-heading">
-        <p className="eyebrow">Technical prototype · Phase 1</p>
+        <p className="eyebrow">Technical prototype · Phase 2</p>
         <h1 id="title-heading">Lagos Life</h1>
         <p className="lede">
-          A 3D life simulator inspired by Lagos. This build is a placeholder district with
-          buildings, roads, lighting and a free camera.
+          A 3D life simulator inspired by Lagos. This build is a placeholder district you can walk
+          around, with a follow camera and collisions. It needs a keyboard.
         </p>
         <button type="button" className="button" onClick={enterWorld}>
-          Explore the district
+          Start walking
         </button>
       </section>
     </div>
