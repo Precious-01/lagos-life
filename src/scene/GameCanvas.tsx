@@ -10,7 +10,8 @@ export function GameCanvas() {
       <Canvas
         shadows
         dpr={[1, 2]}
-        camera={{ position: [90, 60, 90], fov: 50, near: 1, far: 2000 }}
+        // A small near plane lets the camera sit close to the player when a wall is behind them.
+        camera={{ position: [90, 60, 90], fov: 50, near: 0.2, far: 2000 }}
         onCreated={() => markSceneReady()}
       >
         <World />
