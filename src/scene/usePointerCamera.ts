@@ -33,9 +33,12 @@ function wheelDeltaInPixels(event: WheelEvent): number {
 }
 
 /**
- * Collects left-button drags and wheel movement on the game canvas.
+ * Collects left-button drags and wheel movement over the game view.
  * Returns ONE stable object that is updated in place. While `enabled` is false no listeners
  * are attached and the page keeps its normal scrolling and touch behaviour.
+ *
+ * Listeners sit on `window` (capture phase) and filter by target, so they keep working even if
+ * another element stops the event or the pointer leaves the canvas during a drag.
  */
 export function usePointerCamera(enabled: boolean): PointerCameraInput {
   const domElement = useThree((state) => state.gl.domElement);
@@ -46,6 +49,7 @@ export function usePointerCamera(enabled: boolean): PointerCameraInput {
       return;
     }
 
+    const container = domElement.parentElement ?? domElement;
     let activePointer: number | null = null;
     let lastX = 0;
     let lastY = 0;
@@ -55,27 +59,36 @@ export function usePointerCamera(enabled: boolean): PointerCameraInput {
     domElement.style.touchAction = 'none';
     domElement.style.cursor = 'grab';
 
-    const stopDragging = (): void => {
-      if (activePointer !== null && domElement.hasPointerCapture(activePointer)) {
-        domElement.releasePointerCapture(activePointer);
+    /** True when the event started on the game view and not on a button or other control. */
+    const isOverGame = (target: EventTarget | null): boolean => {
+      if (!(target instanceof Node) || !container.contains(target)) {
+        return false;
       }
+      return !(target instanceof Element && target.closest('button, a, input, select, textarea'));
+    };
+
+    const stopDragging = (): void => {
       activePointer = null;
       domElement.style.cursor = 'grab';
     };
 
     const handlePointerDown = (event: PointerEvent): void => {
-      if (event.button !== 0 || activePointer !== null) {
+      if (event.button !== 0 || activePointer !== null || !isOverGame(event.target)) {
         return;
       }
       activePointer = event.pointerId;
       lastX = event.clientX;
       lastY = event.clientY;
-      domElement.setPointerCapture(event.pointerId);
       domElement.style.cursor = 'grabbing';
     };
 
     const handlePointerMove = (event: PointerEvent): void => {
       if (event.pointerId !== activePointer) {
+        return;
+      }
+      // If the button was released somewhere we did not see, stop instead of getting stuck.
+      if ((event.buttons & 1) === 0) {
+        stopDragging();
         return;
       }
       input.lookX += event.clientX - lastX;
@@ -91,24 +104,30 @@ export function usePointerCamera(enabled: boolean): PointerCameraInput {
     };
 
     const handleWheel = (event: WheelEvent): void => {
+      if (!isOverGame(event.target)) {
+        return;
+      }
       // Stops the page from scrolling or zooming while the pointer is over the game.
       event.preventDefault();
       input.wheel += wheelDeltaInPixels(event);
     };
 
-    domElement.addEventListener('pointerdown', handlePointerDown);
-    domElement.addEventListener('pointermove', handlePointerMove);
-    domElement.addEventListener('pointerup', handlePointerEnd);
-    domElement.addEventListener('pointercancel', handlePointerEnd);
-    domElement.addEventListener('wheel', handleWheel, { passive: false });
+    const listenerOptions: AddEventListenerOptions = { capture: true };
+    window.addEventListener('pointerdown', handlePointerDown, listenerOptions);
+    window.addEventListener('pointermove', handlePointerMove, listenerOptions);
+    window.addEventListener('pointerup', handlePointerEnd, listenerOptions);
+    window.addEventListener('pointercancel', handlePointerEnd, listenerOptions);
+    window.addEventListener('blur', stopDragging);
+    window.addEventListener('wheel', handleWheel, { capture: true, passive: false });
 
     return () => {
-      domElement.removeEventListener('pointerdown', handlePointerDown);
-      domElement.removeEventListener('pointermove', handlePointerMove);
-      domElement.removeEventListener('pointerup', handlePointerEnd);
-      domElement.removeEventListener('pointercancel', handlePointerEnd);
-      domElement.removeEventListener('wheel', handleWheel);
-      stopDragging();
+      window.removeEventListener('pointerdown', handlePointerDown, listenerOptions);
+      window.removeEventListener('pointermove', handlePointerMove, listenerOptions);
+      window.removeEventListener('pointerup', handlePointerEnd, listenerOptions);
+      window.removeEventListener('pointercancel', handlePointerEnd, listenerOptions);
+      window.removeEventListener('blur', stopDragging);
+      window.removeEventListener('wheel', handleWheel, { capture: true });
+      activePointer = null;
       domElement.style.touchAction = previousTouchAction;
       domElement.style.cursor = previousCursor;
       input.lookX = 0;
