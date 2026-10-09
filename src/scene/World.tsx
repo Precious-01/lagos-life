@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { DEFAULT_DISTRICT_CONFIG, generateDistrict } from '../game/district';
 import { Buildings } from './Buildings';
-import { CameraRig } from './CameraRig';
 import { Ground } from './Ground';
 import { Lighting } from './Lighting';
+import { PlayerRig } from './PlayerRig';
 
 export function World() {
   const district = useMemo(() => generateDistrict(DEFAULT_DISTRICT_CONFIG), []);
@@ -15,7 +15,7 @@ export function World() {
       <Lighting shadowExtent={shadowExtent} />
       <Ground district={district} />
       <Buildings buildings={district.buildings} />
-      <CameraRig />
+      <PlayerRig district={district} />
     </>
   );
 }
