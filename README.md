@@ -15,11 +15,11 @@ No economy, transport or multiplayer systems exist yet.
 
 ## Controls
 
-| Key                | Action                  |
-| ------------------ | ----------------------- |
-| W A S D or arrows  | Walk (relative to the camera) |
-| Shift              | Sprint                  |
-| Q / E              | Turn the camera         |
+| Key               | Action                        |
+| ----------------- | ----------------------------- |
+| W A S D or arrows | Walk (relative to the camera) |
+| Shift             | Sprint                        |
+| Q / E             | Turn the camera               |
 
 Touch controls are not implemented yet.
 

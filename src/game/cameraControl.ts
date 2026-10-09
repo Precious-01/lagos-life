@@ -65,7 +65,11 @@ export function applyZoom(
   return {
     yaw: view.yaw,
     pitch: view.pitch,
-    distance: clamp(view.distance * Math.exp(wheelDelta * rate), limits.minDistance, limits.maxDistance),
+    distance: clamp(
+      view.distance * Math.exp(wheelDelta * rate),
+      limits.minDistance,
+      limits.maxDistance,
+    ),
   };
 }
 

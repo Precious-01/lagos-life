@@ -106,7 +106,8 @@ export function PlayerRig({ district }: PlayerRigProps) {
 
     // Collision runs AFTER smoothing, so the camera can never glide through a wall while easing.
     const finalPosition = exploring
-      ? constrainCameraGoal({ position: smoothed, target: goal.target }, district.buildings).position
+      ? constrainCameraGoal({ position: smoothed, target: goal.target }, district.buildings)
+          .position
       : smoothed;
 
     camera.position.set(finalPosition.x, finalPosition.y, finalPosition.z);

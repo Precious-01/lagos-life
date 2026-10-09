@@ -88,7 +88,12 @@ export function stepPlayer(
     x: player.x + intent.x * speed * dt,
     z: player.z + intent.z * speed * dt,
   };
-  const resolved = resolveCircleCollisions(desired, config.radius, context.obstacles, context.bounds);
+  const resolved = resolveCircleCollisions(
+    desired,
+    config.radius,
+    context.obstacles,
+    context.bounds,
+  );
   const targetHeading = Math.atan2(intent.x, intent.z);
 
   return {
