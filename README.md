@@ -13,17 +13,17 @@ No gameplay systems exist yet.
 
 ## Commands
 
-| Command                | What it does                                      |
-| ---------------------- | ------------------------------------------------- |
-| `npm install`          | Install dependencies                              |
-| `npm run dev`          | Start the dev server (http://localhost:5173)      |
-| `npm run typecheck`    | Strict TypeScript check                           |
-| `npm run lint`         | ESLint                                            |
-| `npm run test`         | Run unit tests once                               |
-| `npm run check`        | Typecheck + lint + tests                          |
-| `npm run build`        | Typecheck, then production build into `dist/`     |
-| `npm run preview`      | Serve the production build locally                |
-| `npm run format`       | Format all files with Prettier                    |
+| Command             | What it does                                  |
+| ------------------- | --------------------------------------------- |
+| `npm install`       | Install dependencies                          |
+| `npm run dev`       | Start the dev server (http://localhost:5173)  |
+| `npm run typecheck` | Strict TypeScript check                       |
+| `npm run lint`      | ESLint                                        |
+| `npm run test`      | Run unit tests once                           |
+| `npm run check`     | Typecheck + lint + tests                      |
+| `npm run build`     | Typecheck, then production build into `dist/` |
+| `npm run preview`   | Serve the production build locally            |
+| `npm run format`    | Format all files with Prettier                |
 
 ## Structure
 
