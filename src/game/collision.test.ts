@@ -80,6 +80,8 @@ describe('resolveCircleCollisions', () => {
     const district = generateDistrict(DEFAULT_DISTRICT_CONFIG);
     const rng = createRng(11);
     const radius = 0.4;
+    const tolerance = 1e-9;
+    const problems: string[] = [];
 
     for (let i = 0; i < 500; i += 1) {
       const start = {
@@ -88,11 +90,20 @@ describe('resolveCircleCollisions', () => {
       };
       const resolved = resolveCircleCollisions(start, radius, district.buildings, district.bounds);
 
-      expect(Math.abs(resolved.x)).toBeLessThanOrEqual(district.width / 2 - radius + 1e-9);
-      expect(Math.abs(resolved.z)).toBeLessThanOrEqual(district.depth / 2 - radius + 1e-9);
+      if (
+        Math.abs(resolved.x) > district.width / 2 - radius + tolerance ||
+        Math.abs(resolved.z) > district.depth / 2 - radius + tolerance
+      ) {
+        problems.push(`outside bounds: start ${start.x},${start.z} -> ${resolved.x},${resolved.z}`);
+      }
       for (const building of district.buildings) {
-        expect(circleIntersectsRect(resolved, radius - 1e-6, building)).toBe(false);
+        if (circleIntersectsRect(resolved, radius - 1e-6, building)) {
+          problems.push(`inside ${building.id}: start ${start.x},${start.z}`);
+        }
       }
     }
+
+    // One assertion for the whole sweep keeps the test fast and lists any failures.
+    expect(problems).toEqual([]);
   });
 });
