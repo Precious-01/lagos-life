@@ -11,23 +11,27 @@ import {
   type OrbitView,
 } from '../game/cameraControl';
 import { constrainCameraGoal } from '../game/cameraCollision';
-import { buildingsToColliders } from '../game/collider';
+import type { Collider } from '../game/collider';
+import type { Vec2 } from '../game/collision';
 import {
-  DEFAULT_PLAYER_CONFIG,
   createPlayer,
-  findSpawnPoint,
   stepPlayer,
   type MovementContext,
   type PlayerState,
 } from '../game/player';
-import type { District } from '../game/types';
+import type { Rect } from '../game/types';
 import { useGameStore } from '../state/gameStore';
 import { PlayerAvatar } from './PlayerAvatar';
 import { usePointerCamera } from './usePointerCamera';
 import { useKeyboardInput } from './useKeyboardInput';
 
 interface PlayerRigProps {
-  district: District;
+  /** Everything solid. The player collides with all of it. */
+  colliders: readonly Collider[];
+  bounds: Rect;
+  spawn: Vec2;
+  /** Direction the player faces on spawn, in radians. */
+  spawnHeading: number;
 }
 
 /** Everything that changes every frame lives here, in a plain object, not in React state. */
@@ -41,8 +45,8 @@ interface Simulation {
   look: Vec3;
 }
 
-const INTRO_RADIUS = 127;
-const INTRO_HEIGHT = 60;
+const INTRO_RADIUS = 75;
+const INTRO_HEIGHT = 38;
 /** Starts the title-screen orbit where the canvas camera starts, so there is no jump. */
 const INTRO_START_ANGLE = Math.PI / 4;
 const INTRO_SPEED = 0.1;
@@ -61,23 +65,32 @@ const AVATAR_HIDE_DISTANCE = 1.2;
  * Title screen = slow automatic orbit. Explore = third-person follow camera with mouse look,
  * zoom and collision.
  */
-export function PlayerRig({ district }: PlayerRigProps) {
+export function PlayerRig({ colliders, bounds, spawn, spawnHeading }: PlayerRigProps) {
   const phase = useGameStore((state) => state.phase);
   const exploringPhase = phase === 'explore';
   const keys = useKeyboardInput(exploringPhase);
   const pointer = usePointerCamera(exploringPhase);
   const avatarRef = useRef<Group>(null);
 
-  // One collider list serves both the player and the camera.
-  const colliders = useMemo(() => buildingsToColliders(district.buildings), [district]);
   const movement = useMemo<MovementContext>(
-    () => ({ obstacles: colliders, bounds: district.bounds }),
-    [colliders, district],
+    () => ({ obstacles: colliders, bounds }),
+    [colliders, bounds],
+  );
+
+  // The camera only collides with big solid things. Thin fences, poles and palms would make it
+  // jerk in and out as it swings past them.
+  const cameraObstacles = useMemo(
+    () =>
+      colliders.filter(
+        (collider) =>
+          collider.kind === 'building' || collider.kind === 'vehicle' || collider.kind === 'kiosk',
+      ),
+    [colliders],
   );
 
   const [simulation] = useState<Simulation>(() => ({
-    player: createPlayer(findSpawnPoint(movement, DEFAULT_PLAYER_CONFIG.radius)),
-    view: DEFAULT_ORBIT_VIEW,
+    player: createPlayer(spawn, spawnHeading),
+    view: { ...DEFAULT_ORBIT_VIEW, yaw: spawnHeading },
     introAngle: INTRO_START_ANGLE,
     walkPhase: 0,
     look: { x: 0, y: 0, z: 0 },
@@ -97,10 +110,7 @@ export function PlayerRig({ district }: PlayerRigProps) {
       pointer.lookY = 0;
       pointer.wheel = 0;
       // Q and E also turn the camera.
-      view = {
-        ...view,
-        yaw: updateCameraYaw(view.yaw, keys, dt, DEFAULT_FOLLOW_CAMERA.rotateRate),
-      };
+      view = { ...view, yaw: updateCameraYaw(view.yaw, keys, dt, DEFAULT_FOLLOW_CAMERA.rotateRate) };
       simulation.view = view;
 
       simulation.player = stepPlayer(simulation.player, keys, view.yaw, dt, movement);
@@ -125,7 +135,7 @@ export function PlayerRig({ district }: PlayerRigProps) {
 
     // Collision runs AFTER smoothing, so the camera can never glide through a wall while easing.
     const finalPosition = exploring
-      ? constrainCameraGoal({ position: smoothed, target: goal.target }, colliders).position
+      ? constrainCameraGoal({ position: smoothed, target: goal.target }, cameraObstacles).position
       : smoothed;
 
     camera.position.set(finalPosition.x, finalPosition.y, finalPosition.z);
