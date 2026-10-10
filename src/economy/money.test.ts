@@ -157,6 +157,47 @@ describe('applyBasisPoints', () => {
     expect(() => applyBasisPoints(money(100), 100_001)).toThrow(RangeError);
   });
 
+    describe('at the money limit (deterministic)', () => {
+    it('allows a result that is exactly the limit', () => {
+      expect(applyBasisPoints(money(MAX_MONEY_KOBO), 10000)).toBe(MAX_MONEY_KOBO);
+      // 200% of exactly half the limit is exactly the limit, for every rounding mode.
+      const half = money(MAX_MONEY_KOBO / 2);
+      for (const mode of ['down', 'nearest', 'up'] as const) {
+        expect(applyBasisPoints(half, 20000, mode)).toBe(MAX_MONEY_KOBO);
+      }
+      expect(applyBasisPoints(negateMoney(half), 20000, 'nearest')).toBe(-MAX_MONEY_KOBO);
+    });
+
+    it('throws when the result is clearly beyond the limit', () => {
+      expect(() => applyBasisPoints(money(MAX_MONEY_KOBO), 10001)).toThrow(RangeError);
+      expect(() => applyBasisPoints(money(MAX_MONEY_KOBO), 20000)).toThrow(RangeError);
+    });
+
+    it('throws when the result is exactly one kobo beyond the limit', () => {
+      // 66,666,666,666,667 * 150% = 100,000,000,000,000.5 kobo exactly.
+      const amount = money(66_666_666_666_667);
+      // Rounding down gives exactly the limit, which is allowed.
+      expect(applyBasisPoints(amount, 15000, 'down')).toBe(MAX_MONEY_KOBO);
+      // Rounding the half up gives limit + 1, which must throw.
+      expect(() => applyBasisPoints(amount, 15000, 'nearest')).toThrow(RangeError);
+      expect(() => applyBasisPoints(amount, 15000, 'up')).toThrow(RangeError);
+    });
+
+    it('treats negative amounts the same way', () => {
+      const amount = money(-66_666_666_666_667);
+      expect(applyBasisPoints(amount, 15000, 'down')).toBe(-MAX_MONEY_KOBO);
+      expect(() => applyBasisPoints(amount, 15000, 'nearest')).toThrow(RangeError);
+      expect(() => applyBasisPoints(amount, 15000, 'up')).toThrow(RangeError);
+    });
+
+    it('is fine one kobo below the limit', () => {
+      // 66,666,666,666,666 * 150% = 99,999,999,999,999 exactly.
+      expect(applyBasisPoints(money(66_666_666_666_666), 15000, 'nearest')).toBe(
+        MAX_MONEY_KOBO - 1,
+      );
+    });
+  });
+
   it('matches exact BigInt arithmetic, and throws exactly when the result passes the limit', () => {
     const rng = createRng(7);
     const limit = BigInt(MAX_MONEY_KOBO);
@@ -165,7 +206,7 @@ describe('applyBasisPoints', () => {
     let threw = 0;
 
     for (let i = 0; i < 2000; i += 1) {
-      const amount = Math.floor((rng() * MAX_MONEY_KOBO) / 2);
+      const amount = Math.floor(rng() * MAX_MONEY_KOBO);
       const basisPoints = Math.floor(rng() * 20000);
       const product = BigInt(amount) * BigInt(basisPoints);
       const expected = {
