@@ -157,26 +157,53 @@ describe('applyBasisPoints', () => {
     expect(() => applyBasisPoints(money(100), 100_001)).toThrow(RangeError);
   });
 
-  it('matches exact BigInt arithmetic for random large amounts', () => {
+  it('matches exact BigInt arithmetic, and throws exactly when the result passes the limit', () => {
     const rng = createRng(7);
+    const limit = BigInt(MAX_MONEY_KOBO);
     const problems: string[] = [];
+    let matched = 0;
+    let threw = 0;
+
     for (let i = 0; i < 2000; i += 1) {
       const amount = Math.floor(rng() * MAX_MONEY_KOBO);
       const basisPoints = Math.floor(rng() * 20000);
       const product = BigInt(amount) * BigInt(basisPoints);
       const expected = {
-        down: Number(product / 10000n),
-        nearest: Number((product + 5000n) / 10000n),
-        up: Number((product + 9999n) / 10000n),
+        down: product / 10000n,
+        nearest: (product + 5000n) / 10000n,
+        up: (product + 9999n) / 10000n,
       };
+
       for (const mode of ['down', 'nearest', 'up'] as const) {
-        const actual = applyBasisPoints(money(amount), basisPoints, mode);
-        if (actual !== expected[mode]) {
-          problems.push(`${amount} @ ${basisPoints} ${mode}: ${actual} vs ${expected[mode]}`);
+        const want = expected[mode];
+        const label = `${amount} @ ${basisPoints} ${mode}`;
+        if (want > limit) {
+          // The exact answer is beyond the money limit, so a RangeError is the correct result.
+          try {
+            applyBasisPoints(money(amount), basisPoints, mode);
+            problems.push(`${label}: should have thrown`);
+          } catch (error) {
+            if (error instanceof RangeError) {
+              threw += 1;
+            } else {
+              problems.push(`${label}: threw something other than a RangeError`);
+            }
+          }
+        } else {
+          const actual = applyBasisPoints(money(amount), basisPoints, mode);
+          if (actual === Number(want)) {
+            matched += 1;
+          } else {
+            problems.push(`${label}: ${actual} vs ${want}`);
+          }
         }
       }
     }
+
     expect(problems).toEqual([]);
+    // Both outcomes must really be exercised, or the test proves nothing.
+    expect(matched).toBeGreaterThan(100);
+    expect(threw).toBeGreaterThan(100);
   });
 });
 
