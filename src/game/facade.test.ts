@@ -69,7 +69,8 @@ describe('facadeFeatures', () => {
     for (const building of buildings) {
       for (const f of facadeFeatures(building)) {
         const insideWidth = Math.abs(f.x - building.x) + f.width / 2 <= building.width / 2 + EPS;
-        const insideHeight = f.y - f.height / 2 >= -EPS && f.y + f.height / 2 <= building.height + EPS;
+        const insideHeight =
+          f.y - f.height / 2 >= -EPS && f.y + f.height / 2 <= building.height + EPS;
         if (!insideWidth || !insideHeight) {
           problems.push(`${building.id}:${f.type}`);
         }
@@ -122,7 +123,11 @@ describe('facadeFeatures', () => {
         if (!ok) {
           problems.push(building.id);
         }
-      } else if (!types.includes('door') || types.includes('awning') || types.includes('shop-opening')) {
+      } else if (
+        !types.includes('door') ||
+        types.includes('awning') ||
+        types.includes('shop-opening')
+      ) {
         problems.push(building.id);
       }
     }

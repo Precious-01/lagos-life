@@ -36,7 +36,15 @@ function markingBoxes(street: StreetLayout): BoxPart[] {
   const dashPitch = 4;
   const firstDash = road.x - road.width / 2 + 2;
   for (let x = firstDash; x < road.x + road.width / 2 - 1; x += dashPitch) {
-    boxes.push({ x, y: 0.035, z: road.z, width: dashLength, height: 0.03, depth: 0.18, color: LINE_COLOR });
+    boxes.push({
+      x,
+      y: 0.035,
+      z: road.z,
+      width: dashLength,
+      height: 0.03,
+      depth: 0.18,
+      color: LINE_COLOR,
+    });
   }
 
   // Solid edge lines and kerbs, on both sides.

@@ -1,11 +1,6 @@
 import type { Vec2 } from '../game/collision';
 import type { Rect } from '../game/types';
-import {
-  lonLatToUtm31N,
-  utm31NToLonLat,
-  type LonLat,
-  type UtmPoint,
-} from './projection';
+import { lonLatToUtm31N, utm31NToLonLat, type LonLat, type UtmPoint } from './projection';
 
 /**
  * The game's world frame, in metres:

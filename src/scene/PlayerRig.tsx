@@ -13,12 +13,7 @@ import {
 import { constrainCameraGoal } from '../game/cameraCollision';
 import type { Collider } from '../game/collider';
 import type { Vec2 } from '../game/collision';
-import {
-  createPlayer,
-  stepPlayer,
-  type MovementContext,
-  type PlayerState,
-} from '../game/player';
+import { createPlayer, stepPlayer, type MovementContext, type PlayerState } from '../game/player';
 import type { Rect } from '../game/types';
 import { useGameStore } from '../state/gameStore';
 import { PlayerAvatar } from './PlayerAvatar';
@@ -110,7 +105,10 @@ export function PlayerRig({ colliders, bounds, spawn, spawnHeading }: PlayerRigP
       pointer.lookY = 0;
       pointer.wheel = 0;
       // Q and E also turn the camera.
-      view = { ...view, yaw: updateCameraYaw(view.yaw, keys, dt, DEFAULT_FOLLOW_CAMERA.rotateRate) };
+      view = {
+        ...view,
+        yaw: updateCameraYaw(view.yaw, keys, dt, DEFAULT_FOLLOW_CAMERA.rotateRate),
+      };
       simulation.view = view;
 
       simulation.player = stepPlayer(simulation.player, keys, view.yaw, dt, movement);

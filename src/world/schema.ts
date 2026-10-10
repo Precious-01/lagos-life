@@ -215,7 +215,12 @@ function checkMetadata(meta: unknown, errors: string[]): Limits | null {
   if (!utmOk) {
     errors.push('metadata.originUtm needs finite easting and northing');
   }
-  if (!isFiniteNumber(meta.widthM) || meta.widthM <= 0 || !isFiniteNumber(meta.depthM) || meta.depthM <= 0) {
+  if (
+    !isFiniteNumber(meta.widthM) ||
+    meta.widthM <= 0 ||
+    !isFiniteNumber(meta.depthM) ||
+    meta.depthM <= 0
+  ) {
     errors.push('metadata.widthM and metadata.depthM must be positive numbers');
     return null;
   }

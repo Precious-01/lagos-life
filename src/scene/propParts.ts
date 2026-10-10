@@ -76,7 +76,17 @@ function stallParts(prop: StreetPropSpec): BoxPart[] {
   }
 
   for (const side of [-1, 1]) {
-    parts.push(part(prop.x + side * (prop.width / 2 - 0.05), 1.15, front - dir * 0.05, 0.1, 2.3, 0.1, '#4a3a2e'));
+    parts.push(
+      part(
+        prop.x + side * (prop.width / 2 - 0.05),
+        1.15,
+        front - dir * 0.05,
+        0.1,
+        2.3,
+        0.1,
+        '#4a3a2e',
+      ),
+    );
   }
   return parts;
 }
@@ -116,7 +126,17 @@ function fenceParts(prop: StreetPropSpec): BoxPart[] {
     part(prop.x, prop.height * 0.5, prop.z, prop.width, 0.08, 0.08, color),
   ];
   for (let i = 0; i <= posts; i += 1) {
-    parts.push(part(prop.x - prop.width / 2 + (prop.width / posts) * i, prop.height / 2, prop.z, 0.1, prop.height, 0.1, color));
+    parts.push(
+      part(
+        prop.x - prop.width / 2 + (prop.width / posts) * i,
+        prop.height / 2,
+        prop.z,
+        0.1,
+        prop.height,
+        0.1,
+        color,
+      ),
+    );
   }
   return parts;
 }
@@ -130,13 +150,31 @@ function palmParts(prop: StreetPropSpec): BoxPart[] {
   for (let k = 0; k < 6; k += 1) {
     const angle = (k * Math.PI) / 3;
     parts.push(
-      part(x + Math.cos(angle) * 1.4, 6.3, z + Math.sin(angle) * 1.4, 2.8, 0.1, 0.55, k % 2 === 0 ? '#2f6b34' : '#3f7d3a', -angle),
+      part(
+        x + Math.cos(angle) * 1.4,
+        6.3,
+        z + Math.sin(angle) * 1.4,
+        2.8,
+        0.1,
+        0.55,
+        k % 2 === 0 ? '#2f6b34' : '#3f7d3a',
+        -angle,
+      ),
     );
   }
   for (let k = 0; k < 3; k += 1) {
     const angle = (k * 2 * Math.PI) / 3 + Math.PI / 6;
     parts.push(
-      part(x + Math.cos(angle) * 0.7, 6.55, z + Math.sin(angle) * 0.7, 1.6, 0.1, 0.45, '#4a8f3f', -angle),
+      part(
+        x + Math.cos(angle) * 0.7,
+        6.55,
+        z + Math.sin(angle) * 0.7,
+        1.6,
+        0.1,
+        0.45,
+        '#4a8f3f',
+        -angle,
+      ),
     );
   }
   return parts;

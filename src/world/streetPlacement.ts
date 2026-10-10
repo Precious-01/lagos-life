@@ -1,10 +1,6 @@
 import type { Vec2 } from '../game/collision';
 import type { LonLat } from './projection';
-import {
-  lonLatToWorld,
-  worldToLonLat,
-  type WorldFrame,
-} from './worldFrame';
+import { lonLatToWorld, worldToLonLat, type WorldFrame } from './worldFrame';
 
 /**
  * Where the hand-authored street sits in the world.
@@ -40,11 +36,7 @@ export const PROVISIONAL_STREET_PLACEMENT: StreetPlacement = {
   note: 'Placeholder at the region origin. Not a real street location.',
 };
 
-export function streetToWorld(
-  frame: WorldFrame,
-  placement: StreetPlacement,
-  local: Vec2,
-): Vec2 {
+export function streetToWorld(frame: WorldFrame, placement: StreetPlacement, local: Vec2): Vec2 {
   const anchor = lonLatToWorld(frame, placement.anchor);
   const cos = Math.cos(placement.rotationY);
   const sin = Math.sin(placement.rotationY);
@@ -54,11 +46,7 @@ export function streetToWorld(
   };
 }
 
-export function worldToStreet(
-  frame: WorldFrame,
-  placement: StreetPlacement,
-  world: Vec2,
-): Vec2 {
+export function worldToStreet(frame: WorldFrame, placement: StreetPlacement, world: Vec2): Vec2 {
   const anchor = lonLatToWorld(frame, placement.anchor);
   const dx = world.x - anchor.x;
   const dz = world.z - anchor.z;
@@ -70,11 +58,7 @@ export function worldToStreet(
   };
 }
 
-export function streetToLonLat(
-  frame: WorldFrame,
-  placement: StreetPlacement,
-  local: Vec2,
-): LonLat {
+export function streetToLonLat(frame: WorldFrame, placement: StreetPlacement, local: Vec2): LonLat {
   return worldToLonLat(frame, streetToWorld(frame, placement, local));
 }
 
