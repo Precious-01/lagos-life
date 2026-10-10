@@ -97,7 +97,10 @@ export function PlayerRig({ district }: PlayerRigProps) {
       pointer.lookY = 0;
       pointer.wheel = 0;
       // Q and E also turn the camera.
-      view = { ...view, yaw: updateCameraYaw(view.yaw, keys, dt, DEFAULT_FOLLOW_CAMERA.rotateRate) };
+      view = {
+        ...view,
+        yaw: updateCameraYaw(view.yaw, keys, dt, DEFAULT_FOLLOW_CAMERA.rotateRate),
+      };
       simulation.view = view;
 
       simulation.player = stepPlayer(simulation.player, keys, view.yaw, dt, movement);

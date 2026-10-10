@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { circleIntersectsRect } from './collision';
 import { createInputState } from './input';
-import {
-  DEFAULT_PLAYER_CONFIG,
-  createPlayer,
-  stepPlayer,
-  type MovementContext,
-} from './player';
+import { DEFAULT_PLAYER_CONFIG, createPlayer, stepPlayer, type MovementContext } from './player';
 import { rectContains, rectsOverlap } from './rect';
 import { FRONTAGE_Z, buildStreetLayout, buildingHeight } from './street';
 import { analyzeWalkability, isPointReachable } from './walkability';
@@ -67,7 +62,9 @@ describe('street layout data', () => {
     const problems: string[] = [];
     for (const building of street.buildings) {
       const frontZ =
-        building.front === 'plusZ' ? building.z + building.depth / 2 : building.z - building.depth / 2;
+        building.front === 'plusZ'
+          ? building.z + building.depth / 2
+          : building.z - building.depth / 2;
       const expected = building.front === 'plusZ' ? -FRONTAGE_Z : FRONTAGE_Z;
       if (Math.abs(frontZ - expected) > 1e-9) {
         problems.push(building.id);
