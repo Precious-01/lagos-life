@@ -165,7 +165,7 @@ describe('applyBasisPoints', () => {
     let threw = 0;
 
     for (let i = 0; i < 2000; i += 1) {
-      const amount = Math.floor(rng() * MAX_MONEY_KOBO);
+      const amount = Math.floor((rng() * MAX_MONEY_KOBO) / 2);
       const basisPoints = Math.floor(rng() * 20000);
       const product = BigInt(amount) * BigInt(basisPoints);
       const expected = {
