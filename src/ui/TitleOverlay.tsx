@@ -6,14 +6,14 @@ export function TitleOverlay() {
   return (
     <div className="overlay overlay--center">
       <section className="card" aria-labelledby="title-heading">
-        <p className="eyebrow">Technical prototype · Phase 2</p>
-        <h1 id="title-heading">Lagos Life</h1>
+        <p className="eyebrow">Early prototype</p>
+        <h1 id="title-heading">Lagos Tycoon</h1>
         <p className="lede">
-          A 3D life simulator inspired by Lagos. This build is a placeholder district you can walk
-          around, with a follow camera and collisions. It needs a keyboard.
+          Start as a street hustler. Buy sachet water at the market stall, sell it on your pitch,
+          and grow your first naira. All money in this game is fictional. It needs a keyboard.
         </p>
         <button type="button" className="button" onClick={enterWorld}>
-          Start walking
+          Start hustling
         </button>
       </section>
     </div>
