@@ -116,7 +116,10 @@ describe('buildStreetInteractions', () => {
   });
 
   it('throws when the street has no market stall or no kiosk', () => {
-    const withoutStall = { ...street, props: street.props.filter((p) => p.type !== 'market-stall') };
+    const withoutStall = {
+      ...street,
+      props: street.props.filter((p) => p.type !== 'market-stall'),
+    };
     expect(() => buildStreetInteractions(withoutStall)).toThrow('market-stall');
     const withoutKiosk = { ...street, props: street.props.filter((p) => p.type !== 'kiosk') };
     expect(() => buildStreetInteractions(withoutKiosk)).toThrow('kiosk');
@@ -184,7 +187,11 @@ describe('the interaction points work in the real street', () => {
           x: grid.minX + (column + 0.5) * grid.cellSize,
           z: grid.minZ + (row + 0.5) * grid.cellSize,
         };
-        if (grid.walkable[index] === 1 && grid.reachable[index] === 0 && isWithinReach(spot, centre)) {
+        if (
+          grid.walkable[index] === 1 &&
+          grid.reachable[index] === 0 &&
+          isWithinReach(spot, centre)
+        ) {
           unreachable += 1;
         }
       }
@@ -201,7 +208,9 @@ describe('the interaction points work in the real street', () => {
       }
       const status = evaluateInteractions(points, cell);
       if (status.prompt !== null) {
-        problems.push(`${cell.x},${cell.z}: prompt ${status.prompt.point.id} inside the selling spot`);
+        problems.push(
+          `${cell.x},${cell.z}: prompt ${status.prompt.point.id} inside the selling spot`,
+        );
       }
     }
     expect(problems).toEqual([]);
@@ -210,7 +219,9 @@ describe('the interaction points work in the real street', () => {
   it('has no place where the supplier and the kiosk are both in reach', () => {
     const supplier = pointByKind('supplier');
     const kiosk = pointByKind('kiosk');
-    const both = cells.filter((cell) => isWithinReach(supplier, cell) && isWithinReach(kiosk, cell));
+    const both = cells.filter(
+      (cell) => isWithinReach(supplier, cell) && isWithinReach(kiosk, cell),
+    );
     expect(both).toEqual([]);
   });
 
