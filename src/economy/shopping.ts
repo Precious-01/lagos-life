@@ -18,11 +18,7 @@ export interface BuyPreview {
   reason: string | null;
 }
 
-export function previewBuyBags(
-  state: HustleState,
-  config: HustleConfig,
-  bags: number,
-): BuyPreview {
+export function previewBuyBags(state: HustleState, config: HustleConfig, bags: number): BuyPreview {
   if (!Number.isSafeInteger(bags) || bags <= 0) {
     return { ok: false, bags, sachets: 0, totalCost: ZERO_MONEY, reason: 'Invalid amount' };
   }

@@ -1,10 +1,5 @@
 import { create } from 'zustand';
-import {
-  createClock,
-  createClockConfig,
-  type ClockConfig,
-  type GameClock,
-} from '../economy/clock';
+import { createClock, createClockConfig, type ClockConfig, type GameClock } from '../economy/clock';
 import {
   DEFAULT_HUSTLE_CONFIG,
   buyBags,
