@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef, useState } from 'react';
 import type { Group } from 'three';
+import { advanceClock, type GameClock } from '../economy/clock';
 import { DEFAULT_FOLLOW_CAMERA, damp, orbitCameraGoal, updateCameraYaw } from '../game/camera';
 import type { CameraGoal, Vec3 } from '../game/camera';
 import {
@@ -13,12 +14,20 @@ import {
 import { constrainCameraGoal } from '../game/cameraCollision';
 import type { Collider } from '../game/collider';
 import type { Vec2 } from '../game/collision';
-import { createPlayer, stepPlayer, type MovementContext, type PlayerState } from '../game/player';
+import { evaluateInteractions, type InteractionPoint } from '../game/interaction';
+import {
+  createPlayer,
+  stepPlayer,
+  type MovementContext,
+  type PlayerState,
+} from '../game/player';
 import type { Rect } from '../game/types';
+import { useEconomyStore } from '../state/economyStore';
 import { useGameStore } from '../state/gameStore';
 import { PlayerAvatar } from './PlayerAvatar';
-import { usePointerCamera } from './usePointerCamera';
+import { useInteractionKeys } from './useInteractionKeys';
 import { useKeyboardInput } from './useKeyboardInput';
+import { usePointerCamera } from './usePointerCamera';
 
 interface PlayerRigProps {
   /** Everything solid. The player collides with all of it. */
@@ -27,6 +36,8 @@ interface PlayerRigProps {
   spawn: Vec2;
   /** Direction the player faces on spawn, in radians. */
   spawnHeading: number;
+  /** Places the player can use. See game/interaction.ts. */
+  interactions: readonly InteractionPoint[];
 }
 
 /** Everything that changes every frame lives here, in a plain object, not in React state. */
@@ -38,6 +49,8 @@ interface Simulation {
   walkPhase: number;
   /** The smoothed point the camera is looking at. */
   look: Vec3;
+  /** The game clock, including the fraction of a minute. The store only gets whole minutes. */
+  clock: GameClock;
 }
 
 const INTRO_RADIUS = 75;
@@ -56,15 +69,17 @@ const WALK_BOB_HEIGHT = 0.06;
 const AVATAR_HIDE_DISTANCE = 1.2;
 
 /**
- * Owns the player and the camera, and is the ONLY thing that moves the camera.
- * Title screen = slow automatic orbit. Explore = third-person follow camera with mouse look,
- * zoom and collision.
+ * Owns the player, the camera and the game clock driver, and is the ONLY thing that moves the camera.
+ * Title screen = slow automatic orbit, with the game paused.
+ * Explore = third-person follow camera with mouse look, zoom and collision. While a management panel
+ * is open the player is frozen and the clock does not advance.
  */
-export function PlayerRig({ colliders, bounds, spawn, spawnHeading }: PlayerRigProps) {
+export function PlayerRig({ colliders, bounds, spawn, spawnHeading, interactions }: PlayerRigProps) {
   const phase = useGameStore((state) => state.phase);
   const exploringPhase = phase === 'explore';
   const keys = useKeyboardInput(exploringPhase);
   const pointer = usePointerCamera(exploringPhase);
+  useInteractionKeys(exploringPhase);
   const avatarRef = useRef<Group>(null);
 
   const movement = useMemo<MovementContext>(
@@ -89,6 +104,7 @@ export function PlayerRig({ colliders, bounds, spawn, spawnHeading }: PlayerRigP
     introAngle: INTRO_START_ANGLE,
     walkPhase: 0,
     look: { x: 0, y: 0, z: 0 },
+    clock: useEconomyStore.getState().clock,
   }));
 
   useFrame((state, delta) => {
@@ -98,22 +114,45 @@ export function PlayerRig({ colliders, bounds, spawn, spawnHeading }: PlayerRigP
     let goal: CameraGoal;
     let lambda: number;
     if (exploring) {
+      const economy = useEconomyStore.getState();
+      const panelOpen = economy.panel !== 'none';
+
       // Read and clear the mouse movement collected since the last frame.
       let view = applyLookDelta(simulation.view, pointer.lookX, pointer.lookY);
       view = applyZoom(view, pointer.wheel);
       pointer.lookX = 0;
       pointer.lookY = 0;
       pointer.wheel = 0;
-      // Q and E also turn the camera.
-      view = {
-        ...view,
-        yaw: updateCameraYaw(view.yaw, keys, dt, DEFAULT_FOLLOW_CAMERA.rotateRate),
-      };
+
+      if (panelOpen) {
+        // Frozen: no keyboard camera turn, no walking, and the walking bob stops.
+        if (simulation.player.speed !== 0) {
+          simulation.player = { ...simulation.player, speed: 0 };
+        }
+      } else {
+        // Q and E also turn the camera.
+        view = {
+          ...view,
+          yaw: updateCameraYaw(view.yaw, keys, dt, DEFAULT_FOLLOW_CAMERA.rotateRate),
+        };
+        simulation.player = stepPlayer(simulation.player, keys, view.yaw, dt, movement);
+      }
       simulation.view = view;
 
-      simulation.player = stepPlayer(simulation.player, keys, view.yaw, dt, movement);
       goal = orbitFollowGoal(simulation.player, view, DEFAULT_FOLLOW_CAMERA.lookHeight);
       lambda = FOLLOW_LAMBDA;
+
+      // What is the player near? The store ignores this call when nothing has changed.
+      const status = evaluateInteractions(interactions, simulation.player);
+      economy.setPrompt(status.prompt === null ? null : status.prompt.point, status.atSellingSpot);
+
+      // Run the game clock. It is paused while a panel is open. The store only hears about
+      // whole finished minutes, a few times a second, never every frame.
+      const advance = advanceClock(simulation.clock, dt, economy.clockConfig, panelOpen);
+      simulation.clock = advance.clock;
+      if (advance.completed.length > 0) {
+        economy.applyMinutes(advance.completed, status.atSellingSpot, advance.clock);
+      }
     } else {
       simulation.introAngle += dt * INTRO_SPEED;
       goal = orbitCameraGoal({ x: 0, z: 0 }, simulation.introAngle, INTRO_RADIUS, INTRO_HEIGHT);
