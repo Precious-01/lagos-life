@@ -157,7 +157,7 @@ describe('applyBasisPoints', () => {
     expect(() => applyBasisPoints(money(100), 100_001)).toThrow(RangeError);
   });
 
-    describe('at the money limit (deterministic)', () => {
+  describe('at the money limit (deterministic)', () => {
     it('allows a result that is exactly the limit', () => {
       expect(applyBasisPoints(money(MAX_MONEY_KOBO), 10000)).toBe(MAX_MONEY_KOBO);
       // 200% of exactly half the limit is exactly the limit, for every rounding mode.

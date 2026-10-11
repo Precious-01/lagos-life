@@ -6,7 +6,13 @@ import {
   arrivalProbability,
   randomUnit,
 } from './demand';
-import { applyTransaction, canAfford, createLedger, transactionId, type LedgerState } from './ledger';
+import {
+  applyTransaction,
+  canAfford,
+  createLedger,
+  transactionId,
+  type LedgerState,
+} from './ledger';
 import {
   ZERO_MONEY,
   addMoney,
@@ -88,7 +94,9 @@ export function validateHustleConfig(config: HustleConfig): string[] {
     !prices.every((price) => isMoney(price) && price > 0 && price <= MAX_PRICE_KOBO) ||
     !(config.minPrice <= config.referencePrice && config.referencePrice <= config.maxPrice)
   ) {
-    problems.push('prices must be positive, within the price limit, and minPrice <= referencePrice <= maxPrice');
+    problems.push(
+      'prices must be positive, within the price limit, and minPrice <= referencePrice <= maxPrice',
+    );
   }
   if (
     config.arrivalsPerHour.length !== HOURS_PER_DAY ||
@@ -139,11 +147,7 @@ export function createHustle(
 }
 
 export type HustleActionError =
-  | 'invalid-quantity'
-  | 'over-capacity'
-  | 'insufficient-funds'
-  | 'invalid-price'
-  | 'ledger-rejected';
+  'invalid-quantity' | 'over-capacity' | 'insufficient-funds' | 'invalid-price' | 'ledger-rejected';
 
 export type HustleActionResult =
   | { ok: true; state: HustleState }
